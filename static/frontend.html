@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+
+<html>
+
+
+<head>
+	<title>HW6</title>
+	<link rel="stylesheet" type="text/css" href="front.css">
+        <script src="https://d3js.org/d3.v4.js"></script>
+        <script src="https://cdn.jsdelivr.net/gh/holtzy/D3-graph-gallery@master/LIB/d3.layout.cloud.js"></script>
+        
+	<script type="text/javascript">
+
+		//initial setup to call all the functions in the homepage
+		function setup_google_news()
+		{
+			dynamic_content=document.getElementById("dynamic_part");
+
+                        console.log("gooooooogleee");
+			//slidingHeadlines
+			loadJSON("/home/headlines",slidingHeadlines);
+//
+
+                        //Word Cloud
+                        loadJSON("/home/wordCloud",word_cloud);
+
+//			//CNN cards
+			loadJSON("/home/cnn",cards_cnn);
+//
+//			//Fox cards
+			loadJSON("/home/fox-news",cards_foxNews);
+
+		}
+
+
+		function loadJSON(requestURL, method) 
+		{
+//                    alert("k");
+			var request = new XMLHttpRequest();
+			request.open('GET', requestURL);
+			
+		    request.onreadystatechange = function()
+		    {
+		        if (request.readyState == 4 && request.status == 200)
+		        {
+		            var jsonObj=JSON.parse(request.responseText);
+		            console.log(request.status,method);
+		            method(jsonObj);
+		            
+		        };
+		    }; 
+		    request.send();
+			
+		}
+		
+                
+//                Slideshow
+		function slidingHeadlines(jsonObj)
+		{
+			console.log("sliding_headlines",jsonObj);
+			header=jsonObj.articles;
+//			console.log(header);
+			var sliding_headlines=document.getElementById("sliding_Headlines_container");
+                        sliding_headlines.innerHTML="";
+
+			for (i=0; i<5; i++)
+			{
+                            var sliding_news=document.createElement("div");
+                            var class_name=document.createAttribute("class");
+                            class_name.value="sliding_news";
+                            sliding_news.setAttributeNode(class_name);
+                            sliding_headlines.appendChild(sliding_news);
+
+                            var anchor=document.createElement("a");
+                            var ref=document.createAttribute("href");
+                            ref.value=header[i].url;
+                            anchor.setAttributeNode(ref);
+                            var target=document.createAttribute("target");
+                            target.value="_blank";
+                            anchor.setAttributeNode(target);
+                            sliding_news.appendChild(anchor);
+
+                            var image=document.createElement("img");
+                            var source=document.createAttribute("src");
+                            var class_name=document.createAttribute("class");
+                            class_name.value="image_slideshow";
+                            source.value=header[i].urlToImage;
+                            image.setAttributeNode(source);
+                            image.setAttributeNode(class_name);
+                            anchor.appendChild(image);
+
+                            var slideshow_headlines=document.createElement("div");
+                            var class_name=document.createAttribute("class");
+                            class_name.value="slideshow_headlines";
+                            slideshow_headlines.setAttributeNode(class_name);
+                            anchor.appendChild(slideshow_headlines);
+
+                            var s_heading=document.createElement("div");
+                            var class_name=document.createAttribute("class");
+                            class_name.value="s_heading";
+                            s_heading.setAttributeNode(class_name);
+                            s_heading.innerHTML=header[i].title;
+                            slideshow_headlines.appendChild(s_heading);	
+
+                            var s_description=document.createElement("div");
+                            var class_name=document.createAttribute("class");
+                            class_name.value="s_description";
+                            s_description.setAttributeNode(class_name);
+                            s_description.innerHTML=header[i].description;
+                            slideshow_headlines.appendChild(s_description);				
+
+				
+			}
+
+			//console.log(jsonObj);
+
+			slideIndex=0;
+//			
+//			console.log("HIIIII");
+			slideShow();
+
+			function slideShow()
+			{
+				//console.log("helooooooooooo")
+				var slides=document.getElementsByClassName("sliding_news");
+
+				for (var j=0; j<slides.length; j++)
+				{
+
+					slides[j].style.display="none";
+				}
+				slideIndex++;
+	  			if (slideIndex > slides.length) {slideIndex = 1;} 
+				slides[slideIndex-1].style.display = "block";
+				setTimeout(slideShow, 4000);
+			}
+
+		}
+
+
+//                word cloud
+                function word_cloud(jsonObj)
+                 {
+//            alert(jsonObj);
+            var wc=document.getElementById("my_dataviz");
+            wc.innerHTML="";
+            var layout = d3.layout.cloud()
+                .size([225, 200])
+                .words(jsonObj.map(function (d) {
+                    return {text: d.word, size: d.size};
+                }))
+                .padding(3)
+                .rotate(function() { return ~~(Math.random() * 2) * 90; })
+                .font("Impact")
+                .fontSize(function(d) { return d.size; })
+                .on("end", draw);
+
+            layout.start();
+
+            function draw(words) {
+              d3.select("#my_dataviz").append("svg")
+                  .attr("width", layout.size()[0])
+                  .attr("height", layout.size()[1])
+                .append("g")
+                  .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
+                .selectAll("text")
+                  .data(words)
+                .enter().append("text")
+                  .style("font-size", function(d) { return d.size + "px"; })
+                  .style("font-family", "Impact")
+                  .attr("text-anchor", "middle")
+                  .attr("transform", function(d) {
+                    return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+                  })
+                  .text(function(d) { return d.text; });
+        }
+    }
+    //return draw(myWords);
+                
+                
+//                {
+//                    console.log("word cloud",jsonObj);
+//                    var cloud=document.getElementById("my_dataviz");
+//                    cloud.innerHTML="";
+//                    generate_wordCloud(jsonObj);
+//                    
+//                    function generate_wordCloud(words)
+//                    {
+//
+//                        // List of words
+//                        var myWords = jsonObj;
+//
+//                        // set the dimensions and margins of the graph
+//                        var margin = {top: 0, right: 0, bottom: 0, left: 0};
+//                            //width = 225 - margin.left - margin.right,
+//                            //height = 200 - margin.top - margin.bottom;
+//
+//                        // append the svg object to the body of the page
+//                        var svg = d3.select("#my_dataviz").append("svg")
+//                            .attr("width",'100%')
+//                            .attr("height", '100%')
+//                          .append("g")
+//                            .attr("transform",
+//                                  "translate(" + margin.left + "," + margin.top + ")");
+//
+//                        // Constructs a new cloud layout instance. It run an algorithm to find the position of words that suits your requirements
+//                        // Wordcloud features that are different from one word to the other must be here
+//                        var layout = d3.layout.cloud()
+//                          .size([225, 200])
+//                          .words(myWords.map(function(d) { return {text: d.word, size:d.size}; }))
+//                          .padding(5)        //space between words
+//                          .rotate(function() { return ~~(Math.random() * 2) * 90; })
+//                          .fontSize(function(d) { return d.size; })      // font size of words
+//                          .on("end", draw);
+//                        layout.start();
+//
+//                        // This function takes the output of 'layout' above and draw the words
+//                        // Wordcloud features that are THE SAME from one word to the other can be here
+//                        function draw(words) {
+//                          //console.log(words.size);
+//                          svg
+//                            .append("g")
+//                              .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
+//                              .selectAll("text")
+//                                .data(words)
+//                              .enter().append("text")
+//                                .style("font-size", function(d) { return d.size; })
+//                                .style("fill", "#000000")
+//                                .attr("text-anchor", "middle")
+//                                .style("font-family", "Impact")
+//                                .attr("transform", function(d) {
+//                                  return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+//                                })
+//                                .text(function(d) { return d.text; });
+//                        }
+//                    }
+//                }
+
+
+
+//                CNN column cards
+		function cards_cnn(jsonObj)
+		{
+			console.log("cnn news",jsonObj);
+			header_cnn=jsonObj.articles;
+//			console.log(header_cnn);
+			var cards_cnn=document.getElementById("cnn_cards_container");
+                        cards_cnn.innerHTML="";
+
+			for (i=0; i<4; i++)
+			{
+                            var column=document.createElement("div");
+                            var class_name=document.createAttribute("class");
+                            class_name.value="column";
+                            column.setAttributeNode(class_name);
+                            cards_cnn.appendChild(column);
+                            
+                            var cards=document.createElement("div");
+                            var class_name=document.createAttribute("class");
+                            class_name.value="card";
+                            cards.setAttributeNode(class_name);
+                            column.appendChild(cards);
+
+                            var anchor=document.createElement("a");
+                            var ref=document.createAttribute("href");
+                            ref.value=header_cnn[i].url;
+                            anchor.setAttributeNode(ref);
+                            var target=document.createAttribute("target");
+                            target.value="_blank";
+                            anchor.setAttributeNode(target);
+                            cards.appendChild(anchor);
+
+                            var image=document.createElement("img");
+                            var source=document.createAttribute("src");
+                            source.value=header_cnn[i].urlToImage;  
+                            var class_name=document.createAttribute("class");
+                            class_name.value="image_cards";
+                            image.setAttributeNode(source);
+                            image.setAttributeNode(class_name);
+                            anchor.appendChild(image);
+
+
+                            var card_heading=document.createElement("div");
+                            var class_name=document.createAttribute("class");
+                            class_name.value="card_heading";
+                            card_heading.setAttributeNode(class_name);
+                            card_heading.innerHTML=header_cnn[i].title;
+                            anchor.appendChild(card_heading);	
+
+                            var card_description=document.createElement("div");
+                            var class_name=document.createAttribute("class");
+                            class_name.value="card_description";
+                            card_description.setAttributeNode(class_name);
+                            card_description.innerHTML=header_cnn[i].description;
+                            anchor.appendChild(card_description);
+                                
+			}
+		}
+                
+                
+//                Fox News cards
+                function cards_foxNews(jsonObj)
+                {
+                    console.log("fox news",jsonObj);
+                    header_foxNews=jsonObj.articles;
+//                    console.log(header_foxNews);
+                    var cards_foxNews=document.getElementById("foxNews_cards_container");
+                    cards_foxNews.innerHTML="";
+                    for (i=0; i<4; i++)
+                    {
+                        var column=document.createElement("div");
+                        var class_name=document.createAttribute("class");
+                        class_name.value="column";
+                        column.setAttributeNode(class_name);
+                        cards_foxNews.appendChild(column);
+
+                        var cards=document.createElement("div");
+                        var class_name=document.createAttribute("class");
+                        class_name.value="card";
+                        cards.setAttributeNode(class_name);
+                        column.appendChild(cards);
+
+                        var anchor=document.createElement("a");
+                        var ref=document.createAttribute("href");
+                        ref.value=header_foxNews[i].url;
+                        anchor.setAttributeNode(ref);
+                        var target=document.createAttribute("target");
+                        target.value="_blank";
+                        anchor.setAttributeNode(target);
+                        cards.appendChild(anchor);
+
+                        var image=document.createElement("img");
+                        var source=document.createAttribute("src");
+                        source.value=header_foxNews[i].urlToImage;
+                        var class_name=document.createAttribute("class");
+                        class_name.value="image_cards";
+                        image.setAttributeNode(source);
+                        image.setAttributeNode(class_name);
+                        anchor.appendChild(image);
+
+
+                        var card_heading=document.createElement("div");
+                        var class_name=document.createAttribute("class");
+                        class_name.value="card_heading";
+                        card_heading.setAttributeNode(class_name);
+                        card_heading.innerHTML=header_foxNews[i].title;
+                        anchor.appendChild(card_heading);	
+
+                        var card_description=document.createElement("div");
+                        var class_name=document.createAttribute("class");
+                        class_name.value="card_description";
+                        card_description.setAttributeNode(class_name);
+                        card_description.innerHTML=header_foxNews[i].description;
+                        anchor.appendChild(card_description);
+
+                    } 
+                }
+
+                function unhide(clickedButton)
+                {
+                    
+                    if (clickedButton.id=="google-news")
+                    {
+                        setup_google_news();
+                        if (clickedButton.className!=".active.common")
+                        {
+                            clickedButton.classList.add("active","common");
+                            var button1=document.getElementById("search");
+                            button1.className="common";
+//                            console.log ("pressed");
+                            var item1 = document.getElementById("changing_part1");
+//                            console.log(item1.className);
+                            item1.className="unhidden";
+                            var item2 = document.getElementById("changing_part2");
+                            item2.className="hidden";
+                        }
+                    }
+                    else
+                    {
+                    
+                        if (clickedButton.className!=".active.common")
+                        {
+                            var search =document.getElementById("search_results");
+                            search_results.innerHTML="";
+                            clickedButton.classList.add("active","common");
+                            var button1=document.getElementById("google-news");
+                            button1.className="common";
+//                            console.log("pressed 2");
+                            var item1 = document.getElementById("changing_part2");
+//                            console.log(item1);
+                            item1.className="unhidden";
+                            var item2 = document.getElementById("changing_part1");
+                            item2.className="hidden"; 
+                            
+                
+                            var fromDate = document.getElementById("from_date");
+                            var aWeekAgo = new Date();
+                            aWeekAgo.setDate(aWeekAgo.getDate() - 7);
+                            fromDate.value = aWeekAgo.toDateInputValue();
+//                            console.log(fromDate.value);
+                            
+                            var toDate = document.getElementById("to_date");
+                            toDate.value = new Date().toDateInputValue();
+                            var key=document.getElementById("keyword");
+                            key.value="";
+                            
+                            let form=document.getElementsByTagName("form")[0];
+                            form.addEventListener("submit",function(event){
+                                event.preventDefault();
+                                submitForm();
+                            });
+                            loadJSON("/home/search/source",generate_Source_options);
+
+                        }
+                    }
+                }
+                
+                function submitForm()
+                {
+                    console.log("Validating the form");
+                    var form=document.getElementsByTagName("form");
+                    form=form[0];
+                    console.log(form);
+                    key=form.keyword.value;
+                    from=form.from_date.value;
+                    to=form.to_date.value;
+                    source=form.source.value;
+                    if (validateForm())
+                    {
+                        if (source=="all")
+                        {
+                          url="/home/search"+"?keyword="+key+"&from_date="+from+"&to_date="+to;  
+                          console.log("calling");
+                        }
+                        else{
+                            url="/home/search"+"?keyword="+key+"&from_date="+from+"&to_date="+to+"&source_name="+source;
+                            console.log("calling");
+                        }
+
+                        loadJSON(url,getResults);
+                }
+                }
+                
+                
+                
+                
+                Date.prototype.toDateInputValue = (function() {
+                    var local = new Date(this);
+                    local.setMinutes(this.getMinutes() - this.getTimezoneOffset());
+                    return local.toJSON().slice(0,10);
+                });
+
+                
+                
+                
+//                setup for Search
+                function get_source(form)
+                {
+                    category_name=form.category.value;
+//                    console.log(category_name);
+                    if (category_name=="all")
+                    {
+                       loadJSON("/home/search/source",generate_Source_options);
+                       
+                    }
+                    else
+                    {
+                        url="/home/search/source"+"?category_name="+category_name;
+                        loadJSON(url,generate_Source_options);
+                    }
+                    
+                }
+                
+                
+                function generate_Source_options(jsonObj)
+                {
+                    console.log(jsonObj);
+                    source_list=jsonObj;
+                    var source=document.getElementById("source");
+                    source.innerHTML="";
+                    var option=document.createElement("option");
+                    var value1=document.createAttribute("value");
+                    value1.value="all";
+                    option.setAttributeNode(value1);
+                    source.appendChild(option);
+                    option.innerHTML="all";
+                    for (var i=0;i<source_list.length;i++)
+                    {
+                        var option=document.createElement("option");
+                        var value1=document.createAttribute("value");
+                        value1.value=source_list[i].id;
+                        option.setAttributeNode(value1);
+                        source.appendChild(option);
+                        option.innerHTML=source_list[i].name;
+                    }
+                }
+                
+                
+                function validateForm()
+                {
+                    
+                    console.log("Validating the form");
+                    var form=document.getElementsByTagName("form");
+                    form=form[0];
+                    console.log(form);
+                    key=form.keyword.value;
+                    from=form.from_date.value;
+                    to=form.to_date.value;
+                    source=form.source.value;
+                    
+                    //check if the from date is after to date
+                    if (key=="")
+                    {
+                        return false;
+                    }
+                    var from_date=new Date(from);
+                    var to_date=new Date(to);
+                    var now=new Date;
+                    if (from_date>to_date)
+                    {
+                        alert("Incorrect Date");
+                        return false;
+                    }
+                    
+                    //check if from and to dates are later than today
+                    if ((to_date>now) || (from_date>now))
+                    {
+                        alert("Incorrect Date");
+                        return false;
+                    }
+                    return true;
+//                    console.log(key,from,to,source);
+                    
+                }
+                
+                
+                function getResults(jsonObj)
+                {
+//                    alert("i");
+//                    console.log(jsonObj);
+                    if (jsonObj.error)
+                    {
+                        alert(jsonObj.error);
+                        return;
+                    }
+                    var results=document.getElementById("search_results");
+                    head=jsonObj.articles;
+                    results.innerHTML="";
+                    if (head.length==0)
+                    {
+                        results.innerHTML="No Results";
+                    }
+                    for ( i =0;i< head.length;i++)
+                    {
+                        var output_card=document.createElement("div");
+                        var class_name=document.createAttribute("class");
+                        class_name.value="result";
+                        var id=document.createAttribute("id");
+                        id.value="result"+i;
+                        output_card.setAttributeNode(class_name);
+                        output_card.setAttributeNode(id);
+                        var onClick=document.createAttribute("onClick");
+                        onClick.value="expand(this)";
+                        output_card.setAttributeNode(onClick);
+                        var value=document.createAttribute("value");
+                        value.value="not_clicked";
+                        output_card.setAttributeNode(value);
+                        results.appendChild(output_card);
+                        
+                        
+                        
+//                        var anchor=document.createElement("a");
+//                        var class_name=document.createAttribute("class");
+//                        class_name.value="active_anchor";
+//                        anchor.setAttributeNode(class_name);
+//                        output_card.appendChild(anchor);
+                        
+                        var image=document.createElement("img");
+                        var source=document.createAttribute("src");
+                        source.value=head[i].urlToImage;
+                        var class_name=document.createAttribute("class");
+                        class_name.value="image_results";
+                        image.setAttributeNode(source);
+                        image.setAttributeNode(class_name);
+                        output_card.appendChild(image);
+                        
+                        var result_data=document.createElement("div");
+                        var class_name=document.createAttribute("class");
+                        class_name.value="result_data";
+                        result_data.setAttributeNode(class_name);
+                        output_card.appendChild(result_data);
+                        
+                        var cross=document.createElement("div");
+                        var id=document.createAttribute("class");
+                        id.value="cross";
+                        cross.setAttributeNode(id);
+                        var class_name=document.createAttribute("class");
+                        class_name.value="cross";
+                        cross.setAttributeNode(class_name);
+                        cross.classList.add("hidden");
+                        cross.innerHTML="&times;";
+//                        console.log("idddddddddddd",typeof(output_card.id));
+                        var pass=output_card.id;
+//                        console.log(typeof(pass),pass);
+                        var onClick=document.createAttribute("onClick");
+                        onClick.value="event.stopPropagation();close_card('"+pass+"')";
+                        cross.setAttributeNode(onClick);
+                        output_card.appendChild(cross);
+            
+            
+                        var result_heading=document.createElement("div");
+                        var class_name=document.createAttribute("class");
+                        class_name.value="result_title";
+                        result_heading.setAttributeNode(class_name);
+                        result_heading.innerHTML=head[i].title;
+                        result_data.appendChild(result_heading);
+                        
+                        var result_auth=document.createElement("div");
+                        var class_name=document.createAttribute("class");
+                        class_name.value="result_author";
+                        result_auth.setAttributeNode(class_name);
+                        var result_label=document.createElement("span");
+                        result_label.innerHTML="Author: ";
+//                        console.log(result_label);
+                        result_auth.appendChild(result_label);
+//                        console.log(result_auth);
+                        result_auth.innerHTML+=head[i].author;
+                        result_auth.classList.add("hidden");
+                        result_data.appendChild(result_auth);
+                        
+                        var result_source=document.createElement("div");
+                        var class_name=document.createAttribute("class");
+                        class_name.value="result_source";
+                        result_source.setAttributeNode(class_name);
+                        var result_label1=document.createElement("span");
+                        result_label1.innerHTML="Source: ";
+                        result_source.appendChild(result_label1);
+                        result_source.innerHTML+=head[i].source.name;
+                        result_source.classList.add("hidden");
+                        result_data.appendChild(result_source);
+                        
+                        var result_date=document.createElement("div");
+                        var class_name=document.createAttribute("class");
+                        class_name.value="result_date";
+                        result_date.setAttributeNode(class_name);
+                        var result_label2=document.createElement("span");
+                        result_label2.innerHTML="Date: ";
+                        result_date.appendChild(result_label2);
+                        
+                        var d = head[i].publishedAt;
+                        var x = d.split("T")[0].split("-");
+                        var new_date = x[1]+"/"+x[2]+"/"+x[0];
+                        var t = document.createTextNode(new_date);
+                        
+//                        var d=new Date();
+//                        d.setDate(head[i].publishedAt);
+//                        result_date.innerHTML=d.toDateInputValue();
+                        result_date.appendChild(t);
+                        result_date.classList.add("hidden");
+                        result_data.appendChild(result_date);
+                        
+                        
+//                        var fromDate = document.getElementById("from_date");
+//                            var aWeekAgo = new Date();
+//                            aWeekAgo.setDate(aWeekAgo.getDate() - 7);
+//                            fromDate.value = aWeekAgo.toDateInputValue();
+                        
+                        
+                        
+                        var result_desc=document.createElement("div");
+                        var class_name=document.createAttribute("class");
+                        class_name.value="result_description";
+                        result_desc.setAttributeNode(class_name);
+                        result_desc.innerHTML=head[i].description;
+                        result_data.appendChild(result_desc);
+                        
+                   
+                        
+                        var result_anchor=document.createElement("a");
+                        var class_name=document.createAttribute("class");
+                        class_name.value="result_anchor";
+                        result_anchor.setAttributeNode(class_name);
+                        var ref=document.createAttribute("href");
+                        ref.value=head[i].url;
+                        result_anchor.setAttributeNode(ref);
+                        var target=document.createAttribute("target");
+                        target.value="_blank";
+                        result_anchor.setAttributeNode(target);
+                        result_anchor.classList.add("hidden");
+                        result_anchor.innerHTML="Show Original Post";
+                        result_data.appendChild(result_anchor);
+                        
+                        if (i>4)
+                        {
+                            output_card.classList.add("hidden");
+                        }
+                        
+                    }
+                    if(head.length>5)
+                    {
+//                        console.log("hereeeee");
+                        var show=document.createElement("button");
+//                        console.log(show);
+                        var id=document.createAttribute("id");
+                        id.value="show_button";
+                        show.setAttributeNode(id);
+                        var value=document.createAttribute("value");
+                        value.value="more";
+                        show.setAttributeNode(id);
+                        var onClick=document.createAttribute("onClick");
+                        onClick.value="collapse(this)";
+                        show.setAttributeNode(onClick);
+                        show.innerHTML="Show More";
+                        results.appendChild(show);
+                    }
+                    
+                }
+                
+                function collapse(button)
+                {
+                    var cards=document.getElementsByClassName("result");
+                    if (button.value=="more")
+                    {
+                        for (var i=5;i<cards.length;i++)
+                        {
+                           cards[i].className="result";
+                        }
+                        button.value="less";
+                        button.innerHTML="Show Less";
+                    }
+                    else
+                    {
+                        for (var i=5;i<cards.length;i++)
+                        {
+                           cards[i].classList.add("hidden");
+                        }
+                        button.value="more";
+                        button.innerHTML="Show More";
+                    }
+                            
+                }
+                
+                
+                function expand(output_card)
+                {
+                    var article_info=output_card.children[1].children;
+                    output_card.classList.add("active1");
+                   output_card.children[2].classList.remove("hidden");
+                    var cross=output_card.children[2];
+//                    console.log(article_info);
+                    article_info[1].classList.remove('hidden');
+                    article_info[2].classList.remove('hidden');
+                    article_info[3].classList.remove('hidden');
+                    article_info[5].classList.remove('hidden');
+                    output_card.onClick="";
+                    output_card.style.cursor="default";
+                    cross.style.cursor="pointer";
+                    article_info[5].style.cursor="pointer";
+                    article_info[4].classList.add('normal');
+                }
+                
+                
+                function close_card(id)
+                {
+//                    ('t');
+                    var element=document.getElementById(id);
+                    element.classList.remove("active1");
+                    element.onClick="expand(this)";
+                    var temp=element.children;
+                    temp[2].classList.add("hidden");
+                    var properties=temp[1].children;
+                    properties[1].classList.add("hidden");
+                    properties[2].classList.add("hidden");
+                    properties[3].classList.add("hidden");
+                    properties[5].classList.add("hidden");
+                    properties[4].classList.remove('normal');
+//                    console.log(properties);
+                    element.style.cursor="pointer";
+                    
+                    
+                   
+                    
+                }
+                
+                
+                function clear_form()
+                {
+//                    alert('t');
+                    var search_results=document.getElementById("search_results");
+                    search_results.innerHTML="";
+                    var key=document.getElementById("keyword");
+                    key.value="";
+                    var fromDate = document.getElementById("from_date");
+                    var aWeekAgo = new Date();
+                    aWeekAgo.setDate(aWeekAgo.getDate() - 7);
+                    fromDate.value = aWeekAgo.toDateInputValue();
+//                            console.log(fromDate.value);
+
+                    var toDate = document.getElementById("to_date");
+                    toDate.value = new Date().toDateInputValue();
+                    loadJSON("/home/search/source",generate_Source_options);
+                    var category=document.getElementById("category");
+                    category.selectedIndex=0;
+                    
+                    
+//                    var form=document.getElementsByTagName();
+                    
+                }
+                
+
+</script>
+</head>
+
+<body onload="setup_google_news()">
+	
+    <div id="container">
+	<div id="buttons-container">
+		<div id="buttons-group">
+			<button type="button" class="active common" id="google-news" onclick="unhide(this)" >Google News</button>
+			<button type="button" class="common" id="search" onclick="unhide(this)">Search</button>
+		</div>
+                
+	</div>
+
+	<div id="dynamic_part" >
+            
+            <div id="changing_part1" class="unhidden">
+                
+                <div class="row1">
+                    <div id="sliding_Headlines_container"> </div>
+                    <div id="my_dataviz"></div>
+
+
+                </div>
+
+                <div class="row2">
+                    <div class="sub_heading">CNN</div>
+                    <div id="cnn_cards_container"></div>
+                </div>
+
+                <div class="row3">
+                    <div class="sub_heading">Fox News</div>
+                    <div id="foxNews_cards_container"></div>
+                </div>
+            
+            </div>
+            
+            
+            
+            
+            
+            <div id="changing_part2" class="hidden" >
+                <div id="form-container">
+                    <form>
+                        <div class="form-row1">
+                        <label class="labels" for="keyword">Keyword<span class="required">*</span></label>
+                        <input type="text" id="keyword" name="keyword" class="form-element" required size="12">
+
+                        <label class="labels" for="from_date">From<span class="required">*</span></label>
+                        <input type="date" id="from_date" name="from_date" class="form-element" required>
+
+                        <label class="labels" for="to_date">To<span class="required">*</span></label>
+                        <input type="date" id="to_date" name="to_date" class="form-element" required>
+                        </div>
+                        
+                        <div class="form-row2">
+                        <label class="labels" for="category">Category</label>
+<!--                        <input type="text" id="category" name="category" class="form-element" size="12">-->
+                        <select id="category" name="category" class="form-element" onchange="get_source(this.form)">
+                            <option value="all">all</option>
+                            <option value="business">business</option>
+                            <option value="entertainment">entertainment</option>
+                            <option value="general">general</option>
+                            <option value="health">health</option>
+                            <option value="science">science</option>
+                            <option value="sports">sports</option>
+                            <option value="technology">technology</option>
+                        </select>
+                            
+
+                        <label class="labels" for="source">Source</label>
+<!--                        <input type="text" id="source" name="source" class="form-element" size="12">-->
+                        <select id="source" name="source" class="form-element" >
+                            <option value="all" >all</option>
+                        </select>
+                        </div>
+
+                        <div class="form-row3">
+                        <button type="submit" id="submit" name="submit" class="form-buttons" value="Submit" >
+                        Search</button>
+                        <input type="button" id="reset" name="reset" class="form-buttons" value="Clear" onclick="clear_form()">
+                        </div>
+                    </form>
+                    
+                </div>
+                <div id="search_results">
+                    
+                </div>
+        </div>
+	</div>
+       
+    </div>
+
+</body>
+
+
+</html>
